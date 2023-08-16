@@ -1,39 +1,37 @@
 package me.night.vote.command;
 
+import cc.dreamcode.command.annotations.RequiredPermission;
 import cc.dreamcode.command.bukkit.BukkitCommand;
 import eu.okaeri.injector.annotation.Inject;
 import lombok.NonNull;
 import me.night.vote.config.MessageConfig;
-import me.night.vote.config.PluginConfig;
-import me.night.vote.menu.MenuController;
+import me.night.vote.config.VoteConfig;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public class VoteCommand extends BukkitCommand {
+@RequiredPermission(permission = "vote.reset")
+public class VoteResetCommand extends BukkitCommand {
+
+    @Inject
+    private VoteConfig voteConfig;
 
     @Inject
     private MessageConfig messageConfig;
 
-    @Inject
-    private MenuController menuController;
-
-    public VoteCommand() {
-        super("vote");
+    public VoteResetCommand() {
+        super("votereset");
     }
 
     @Override
     public void content(@NonNull CommandSender sender, @NonNull String[] args) {
-        if (sender instanceof Player) {
-            this.menuController.openMenu((HumanEntity) sender);
-        }
+        this.voteConfig.itemOneVotes.clear();
+        this.voteConfig.itemTwoList.clear();
+        this.messageConfig.successfullyRemovedVotes.send(sender);
     }
 
     @Override
     public List<String> tab(@NonNull CommandSender sender, @NonNull String[] args) {
         return null;
     }
-
 }

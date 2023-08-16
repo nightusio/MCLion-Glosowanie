@@ -12,22 +12,18 @@ import cc.dreamcode.platform.bukkit.component.ConfigurationComponentResolver;
 import cc.dreamcode.platform.bukkit.component.ListenerComponentResolver;
 import cc.dreamcode.platform.bukkit.component.RunnableComponentResolver;
 import cc.dreamcode.platform.component.ComponentManager;
-import cc.dreamcode.platform.persistence.DreamPersistence;
-import cc.dreamcode.platform.persistence.component.DocumentPersistenceComponentResolver;
-import cc.dreamcode.platform.persistence.component.DocumentRepositoryComponentResolver;
+import me.night.vote.command.VoteCommand;
+import me.night.vote.command.VoteResetCommand;
 import me.night.vote.config.MessageConfig;
 import me.night.vote.config.PluginConfig;
-import me.night.vote.controller.ExampleUserController;
-import me.night.vote.user.UserRepository;
 import eu.okaeri.configs.serdes.OkaeriSerdesPack;
-import eu.okaeri.configs.yaml.bukkit.serdes.SerdesBukkit;
-import eu.okaeri.persistence.document.DocumentPersistence;
-import eu.okaeri.tasker.bukkit.BukkitTasker;
 import lombok.Getter;
 import lombok.NonNull;
+import me.night.vote.config.VoteConfig;
+import me.night.vote.menu.MenuController;
 
 @Getter
-public final class VotePlugin extends DreamBukkitPlatform implements DreamBukkitConfig, DreamPersistence {
+public final class VotePlugin extends DreamBukkitPlatform implements DreamBukkitConfig {
 
     private static VotePlugin votePlugin;
 
@@ -38,13 +34,15 @@ public final class VotePlugin extends DreamBukkitPlatform implements DreamBukkit
 
     @Override
     public void enable(@NonNull ComponentManager componentManager) {
-        this.registerInjectable(BukkitTasker.newPool(this));
         this.registerInjectable(BukkitMenuProvider.create(this));
         this.registerInjectable(BukkitCommandProvider.create(this, this.getInjector()));
 
         componentManager.registerResolver(CommandComponentResolver.class);
         componentManager.registerResolver(ListenerComponentResolver.class);
         componentManager.registerResolver(RunnableComponentResolver.class);
+
+
+        this.getDreamLogger().info("Registering configs");
 
         componentManager.registerResolver(ConfigurationComponentResolver.class);
         componentManager.registerComponent(MessageConfig.class, messageConfig ->
@@ -53,20 +51,15 @@ public final class VotePlugin extends DreamBukkitPlatform implements DreamBukkit
                     bukkitCommandProvider.setRequiredPlayerMessage(messageConfig.notPlayer.getText());
                 }));
 
-        componentManager.registerComponent(PluginConfig.class, pluginConfig -> {
-            componentManager.setDebug(pluginConfig.debug);
+        componentManager.registerComponent(PluginConfig.class);
+        componentManager.registerComponent(VoteConfig.class);
 
-            // register persistence + repositories
-            this.registerInjectable(pluginConfig.storageConfig);
+        this.getDreamLogger().info("Registering menu");
+        componentManager.registerComponent(MenuController.class);
 
-            componentManager.registerResolver(DocumentPersistenceComponentResolver.class);
-            componentManager.registerResolver(DocumentRepositoryComponentResolver.class);
-
-            componentManager.registerComponent(DocumentPersistence.class);
-            componentManager.registerComponent(UserRepository.class);
-        });
-
-        componentManager.registerComponent(ExampleUserController.class);
+        this.getDreamLogger().info("Registering commands");
+        componentManager.registerComponent(VoteCommand.class);
+        componentManager.registerComponent(VoteResetCommand.class);
     }
 
     @Override
@@ -76,7 +69,7 @@ public final class VotePlugin extends DreamBukkitPlatform implements DreamBukkit
 
     @Override
     public @NonNull DreamVersion getDreamVersion() {
-        return DreamVersion.create("Dream-Template", "1.0-InDEV", "author");
+        return DreamVersion.create("MCLion-Glosowanie", "1.0", "Xaries");
     }
 
     @Override
@@ -84,13 +77,6 @@ public final class VotePlugin extends DreamBukkitPlatform implements DreamBukkit
         return registry -> {
             registry.register(new BukkitNoticeSerdes());
             registry.register(new MenuBuilderSerdes());
-        };
-    }
-
-    @Override
-    public @NonNull OkaeriSerdesPack getPersistenceSerdesPack() {
-        return registry -> {
-            registry.register(new SerdesBukkit());
         };
     }
 
